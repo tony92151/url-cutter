@@ -424,6 +424,35 @@
     toggleQueryItem(queryButton.dataset.queryId);
   }
 
+  function handleGenerateClick() {
+    if (!state) {
+      showActionStatus("請先提供有效的來源網址。", true);
+      return;
+    }
+
+    state.trimmedUrl = rebuildUrl(state);
+    elements.resultUrl.textContent = state.trimmedUrl;
+    showActionStatus("已更新。", false);
+  }
+
+  async function handleCopyClick() {
+    if (!state || !state.trimmedUrl) {
+      showActionStatus("請先產生裁剪後網址。", true);
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+
+      await navigator.clipboard.writeText(state.trimmedUrl);
+      showActionStatus("已複製。", false);
+    } catch (error) {
+      showActionStatus("無法自動複製，請手動選取下方網址。", true);
+    }
+  }
+
   function getEncodedUrlParam() {
     const query = window.location.search.replace(/^\?/, "");
     const params = query ? query.split("&") : [];
@@ -504,10 +533,14 @@
     elements.queryParameters = document.getElementById("query-parameters");
     elements.actionStatus = document.getElementById("action-status");
     elements.resultUrl = document.getElementById("result-url");
+    elements.generateButton = document.getElementById("generate-button");
+    elements.copyButton = document.getElementById("copy-button");
 
     elements.manualUrlForm.addEventListener("submit", handleManualSubmit);
     elements.urlSegments.addEventListener("click", handleSegmentClick);
     elements.queryParameters.addEventListener("click", handleQueryClick);
+    elements.generateButton.addEventListener("click", handleGenerateClick);
+    elements.copyButton.addEventListener("click", handleCopyClick);
     initFromLocation();
   }
 
