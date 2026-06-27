@@ -105,8 +105,14 @@
     };
   }
 
+  function areAllQueryItemsRemoved(currentState) {
+    return currentState.queryItems.length > 0 && currentState.queryItems.every(function (item) {
+      return item.removed;
+    });
+  }
+
   function getQuerySegmentStatus(currentState) {
-    if (currentState.removedSegments.query) {
+    if (currentState.removedSegments.query || areAllQueryItemsRemoved(currentState)) {
       return "移除";
     }
 
@@ -362,6 +368,20 @@
 
   function toggleSegment(segmentId) {
     if (!state || !(segmentId in state.removedSegments)) {
+      return;
+    }
+
+    if (segmentId === "query") {
+      if (state.removedSegments.query || areAllQueryItemsRemoved(state)) {
+        state.removedSegments.query = false;
+        state.queryItems.forEach(function (item) {
+          item.removed = false;
+        });
+      } else {
+        state.removedSegments.query = true;
+      }
+
+      render();
       return;
     }
 
