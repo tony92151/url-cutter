@@ -23,9 +23,9 @@ body {
 }
 
 .app-shell {
-  width: min(1100px, calc(100% - 24px));
+  width: min(100% - 20px, 1100px);
   margin: 0 auto;
-  padding: 24px 0 48px;
+  padding: 18px 0 48px;
 }
 
 .app-header,
@@ -35,17 +35,14 @@ body {
 }
 
 .app-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: flex-end;
+  display: block;
 }
 
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 18px;
+  padding: 15px;
   box-shadow: var(--shadow);
 }
 
@@ -87,7 +84,7 @@ h2 {
 }
 
 .input-row {
-  display: flex;
+  display: grid;
   gap: 10px;
 }
 
@@ -131,12 +128,14 @@ button:disabled {
   background: var(--action);
   color: #fff;
   padding: 10px 16px;
+  width: 100%;
 }
 
 .secondary-action {
   background: var(--action-dark);
   color: #fff;
   padding: 10px 16px;
+  width: 100%;
 }
 
 .status-message {
@@ -154,6 +153,7 @@ button:disabled {
 .segment {
   min-height: 44px;
   max-width: 100%;
+  width: 100%;
   border: 1px solid transparent;
   border-radius: 8px;
   background: #eef3f6;
@@ -258,8 +258,7 @@ button.segment:disabled:hover {
 }
 
 .action-panel {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 10px;
   align-items: center;
 }
@@ -310,32 +309,36 @@ code {
   }
 }
 
-@media (max-width: 680px) {
+@media (min-width: 681px) {
   .app-shell {
-    width: min(100% - 20px, 1100px);
-    padding-top: 18px;
+    width: min(1100px, calc(100% - 24px));
+    padding-top: 24px;
   }
 
   .app-header {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-end;
   }
 
   .panel {
-    padding: 15px;
+    padding: 18px;
   }
 
-  .input-row,
+  .input-row {
+    display: flex;
+  }
+
   .action-panel {
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
   }
 
   .input-row button,
   .primary-action,
-  .secondary-action {
-    width: 100%;
-  }
-
+  .secondary-action,
   .segment {
-    width: 100%;
+    width: auto;
   }
 }
