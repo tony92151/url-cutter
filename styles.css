@@ -7,6 +7,7 @@
   --line: #d8dee6;
   --action: #146c94;
   --action-dark: #263542;
+  --shadow: 0 12px 30px rgb(23 32 42 / 7%);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -18,6 +19,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
+  line-height: 1.5;
 }
 
 .app-shell {
@@ -32,11 +34,23 @@ body {
   margin-bottom: 16px;
 }
 
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-end;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.cutter-panel {
+  border-color: #c9d8e2;
 }
 
 .eyebrow {
@@ -55,13 +69,15 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: 30px;
-  line-height: 1.15;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1.12;
+  letter-spacing: 0;
 }
 
 h2 {
   margin-bottom: 12px;
   font-size: 20px;
+  line-height: 1.25;
 }
 
 .url-form label {
@@ -87,6 +103,14 @@ input {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgb(20 108 148 / 35%);
+  outline-offset: 2px;
 }
 
 button {
@@ -95,6 +119,10 @@ button {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 .input-row button,
@@ -122,63 +150,6 @@ button {
   gap: 10px;
 }
 
-.result-url {
-  display: block;
-  min-height: 54px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fbfcfd;
-  padding: 14px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  overflow-wrap: anywhere;
-  user-select: text;
-}
-
-.action-panel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.action-panel .status-message {
-  flex-basis: 100%;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  border-bottom: 1px solid var(--line);
-  padding: 10px 8px;
-  text-align: left;
-  vertical-align: top;
-}
-
-code {
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 680px) {
-  .input-row,
-  .action-panel {
-    display: grid;
-  }
-
-  .input-row button,
-  .primary-action,
-  .secondary-action {
-    width: 100%;
-  }
-}
-
 .segment {
   min-height: 44px;
   max-width: 100%;
@@ -192,11 +163,6 @@ code {
 
 button.segment:hover {
   filter: brightness(0.98);
-}
-
-button.segment:focus-visible {
-  outline: 3px solid rgb(20 108 148 / 35%);
-  outline-offset: 2px;
 }
 
 .segment-content {
@@ -270,6 +236,91 @@ button.segment:focus-visible {
   box-shadow: inset 0 -4px 0 rgb(111 94 168 / 18%);
 }
 
+.result-url {
+  display: block;
+  min-height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.action-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.action-panel .status-message {
+  flex-basis: 100%;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+code {
+  border-radius: 5px;
+  background: #eef1f4;
+  padding: 2px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
 .is-error {
   color: #9d332d;
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    width: min(100% - 20px, 1100px);
+    padding-top: 18px;
+  }
+
+  .app-header {
+    display: block;
+  }
+
+  .panel {
+    padding: 15px;
+  }
+
+  .input-row,
+  .action-panel {
+    display: grid;
+  }
+
+  .input-row button,
+  .primary-action,
+  .secondary-action {
+    width: 100%;
+  }
+
+  .segment {
+    width: 100%;
+  }
 }
