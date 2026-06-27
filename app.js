@@ -39,8 +39,29 @@
     return parsed;
   }
 
+  function decodeQueryComponent(value) {
+    try {
+      return decodeURIComponent(value);
+    } catch (error) {
+      return value;
+    }
+  }
+
   function getEncodedUrlParam() {
-    return new URLSearchParams(window.location.search).get("url");
+    const query = window.location.search.replace(/^\?/, "");
+    const params = query ? query.split("&") : [];
+
+    for (const param of params) {
+      const separatorIndex = param.indexOf("=");
+      const rawKey = separatorIndex === -1 ? param : param.slice(0, separatorIndex);
+      const rawValue = separatorIndex === -1 ? "" : param.slice(separatorIndex + 1);
+
+      if (decodeQueryComponent(rawKey) === "url") {
+        return decodeQueryComponent(rawValue);
+      }
+    }
+
+    return null;
   }
 
   function showStatus(message, isError) {
