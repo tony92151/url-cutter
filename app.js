@@ -49,6 +49,10 @@
     }
   }
 
+  function decodeQueryDisplayPart(value) {
+    return decodeUrlPart(value);
+  }
+
   function buildUserInfoDisplay(parsed) {
     if (!parsed.username && !parsed.password) {
       return "";
@@ -272,6 +276,18 @@
     return classes.join(" ");
   }
 
+  function getSegmentAriaPressed(segment) {
+    if (segment.status === "移除") {
+      return "true";
+    }
+
+    if (segment.status === "部分移除") {
+      return "mixed";
+    }
+
+    return "false";
+  }
+
   function renderSegments() {
     elements.urlSegments.replaceChildren();
 
@@ -285,7 +301,7 @@
         button.type = "button";
         button.className = getSegmentClassName(segment);
         button.dataset.segmentId = segment.id;
-        button.setAttribute("aria-pressed", String(segment.status === "移除"));
+        button.setAttribute("aria-pressed", getSegmentAriaPressed(segment));
         button.append(createSegmentContent(segment));
         elements.urlSegments.append(button);
         return;
@@ -299,7 +315,9 @@
   }
 
   function getQueryItemDisplay(item) {
-    return item.hasEquals ? item.key + "=" + item.value : item.key;
+    const key = decodeQueryDisplayPart(item.rawKey);
+    const value = decodeQueryDisplayPart(item.rawValue);
+    return item.hasEquals ? key + "=" + value : key;
   }
 
   function renderQueryItems() {
