@@ -167,11 +167,14 @@ button.segment:hover {
 }
 
 button.segment:disabled {
-  opacity: .72;
+  background: #f1e8e7;
+  border-color: #d9bfbc;
+  color: #7e2b27;
+  filter: grayscale(0.12);
 }
 
 button.segment:disabled:hover {
-  filter: grayscale(0.2);
+  filter: grayscale(0.12);
 }
 
 .segment-content {
@@ -233,7 +236,6 @@ button.segment:disabled:hover {
   background: #fae5e2;
   border-color: #e8b5af;
   color: #9d332d;
-  opacity: .82;
 }
 
 .is-removed .segment-value {
