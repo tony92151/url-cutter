@@ -194,6 +194,198 @@
     return segments;
   }
 
+  function serializeQueryItem(item) {
+    return item.hasEquals ? item.rawKey + "=" + item.rawValue : item.rawKey;
+  }
+
+  function rebuildUrl(currentState) {
+    const nextUrl = new URL(currentState.sourceUrl);
+
+    if (currentState.removedSegments.userInfo) {
+      nextUrl.username = "";
+      nextUrl.password = "";
+    }
+
+    if (currentState.removedSegments.port) {
+      nextUrl.port = "";
+    }
+
+    if (currentState.removedSegments.path) {
+      nextUrl.pathname = "/";
+    }
+
+    if (currentState.removedSegments.query) {
+      nextUrl.search = "";
+    } else if (currentState.queryItems.some(function (item) { return item.removed; })) {
+      const keptQuery = currentState.queryItems
+        .filter(function (item) { return !item.removed; })
+        .map(serializeQueryItem)
+        .join("&");
+      nextUrl.search = keptQuery ? "?" + keptQuery : "";
+    }
+
+    if (currentState.removedSegments.fragment) {
+      nextUrl.hash = "";
+    }
+
+    return nextUrl.toString();
+  }
+
+  function createStatusBadge(text) {
+    const badge = document.createElement("span");
+    badge.className = "segment-status";
+    badge.textContent = text;
+    return badge;
+  }
+
+  function createSegmentContent(segment) {
+    const content = document.createElement("span");
+    content.className = "segment-content";
+
+    const label = document.createElement("span");
+    label.className = "segment-label";
+    label.textContent = segment.label;
+
+    const value = document.createElement("span");
+    value.className = "segment-value";
+    value.textContent = segment.value;
+
+    content.append(label, value, createStatusBadge(segment.status));
+    return content;
+  }
+
+  function getSegmentClassName(segment) {
+    const classes = ["segment", "segment-" + segment.id];
+
+    if (segment.required) {
+      classes.push("is-required");
+    }
+
+    if (segment.status === "移除") {
+      classes.push("is-removed");
+    }
+
+    if (segment.status === "部分移除") {
+      classes.push("is-partial");
+    }
+
+    return classes.join(" ");
+  }
+
+  function renderSegments() {
+    elements.urlSegments.replaceChildren();
+
+    if (!state) {
+      return;
+    }
+
+    getSegments(state).forEach(function (segment) {
+      if (segment.removable) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = getSegmentClassName(segment);
+        button.dataset.segmentId = segment.id;
+        button.setAttribute("aria-pressed", String(segment.status === "移除"));
+        button.append(createSegmentContent(segment));
+        elements.urlSegments.append(button);
+        return;
+      }
+
+      const locked = document.createElement("span");
+      locked.className = getSegmentClassName(segment);
+      locked.append(createSegmentContent(segment));
+      elements.urlSegments.append(locked);
+    });
+  }
+
+  function getQueryItemDisplay(item) {
+    return item.hasEquals ? item.key + "=" + item.value : item.key;
+  }
+
+  function renderQueryItems() {
+    elements.queryParameters.replaceChildren();
+
+    if (!state || state.queryItems.length === 0) {
+      elements.querySection.hidden = true;
+      return;
+    }
+
+    elements.querySection.hidden = false;
+
+    state.queryItems.forEach(function (item) {
+      const button = document.createElement("button");
+      const removed = state.removedSegments.query || item.removed;
+      button.type = "button";
+      button.className = "segment segment-queryItem" + (removed ? " is-removed" : "");
+      button.dataset.queryId = item.id;
+      button.disabled = state.removedSegments.query;
+      button.setAttribute("aria-pressed", String(removed));
+
+      button.append(createSegmentContent({
+        id: "queryItem",
+        label: "Parameter",
+        value: getQueryItemDisplay(item),
+        status: removed ? "移除" : "保留"
+      }));
+
+      elements.queryParameters.append(button);
+    });
+  }
+
+  function render() {
+    if (state) {
+      state.trimmedUrl = rebuildUrl(state);
+      elements.resultUrl.textContent = state.trimmedUrl;
+    }
+
+    renderSegments();
+    renderQueryItems();
+  }
+
+  function toggleSegment(segmentId) {
+    if (!state || !(segmentId in state.removedSegments)) {
+      return;
+    }
+
+    state.removedSegments[segmentId] = !state.removedSegments[segmentId];
+    render();
+  }
+
+  function toggleQueryItem(queryId) {
+    if (!state || state.removedSegments.query) {
+      return;
+    }
+
+    const item = state.queryItems.find(function (queryItem) {
+      return queryItem.id === queryId;
+    });
+
+    if (!item) {
+      return;
+    }
+
+    item.removed = !item.removed;
+    render();
+  }
+
+  function handleSegmentClick(event) {
+    const segmentButton = event.target.closest("[data-segment-id]");
+    if (!segmentButton) {
+      return;
+    }
+
+    toggleSegment(segmentButton.dataset.segmentId);
+  }
+
+  function handleQueryClick(event) {
+    const queryButton = event.target.closest("[data-query-id]");
+    if (!queryButton) {
+      return;
+    }
+
+    toggleQueryItem(queryButton.dataset.queryId);
+  }
+
   function getEncodedUrlParam() {
     const query = window.location.search.replace(/^\?/, "");
     const params = query ? query.split("&") : [];
@@ -216,6 +408,11 @@
     elements.sourceStatus.classList.toggle("is-error", Boolean(isError));
   }
 
+  function showActionStatus(message, isError) {
+    elements.actionStatus.textContent = message || "";
+    elements.actionStatus.classList.toggle("is-error", Boolean(isError));
+  }
+
   function setPreview(text) {
     elements.resultUrl.textContent = text;
   }
@@ -224,7 +421,8 @@
     state = createInitialState(sourceUrl);
     elements.manualUrlInput.value = state.sourceUrl;
     showStatus("網址已解析。", false);
-    setPreview(state.trimmedUrl);
+    showActionStatus("", false);
+    render();
   }
 
   function handleManualSubmit(event) {
@@ -234,6 +432,10 @@
     } catch (error) {
       state = null;
       showStatus(error.message, true);
+      showActionStatus("", false);
+      elements.urlSegments.replaceChildren();
+      elements.queryParameters.replaceChildren();
+      elements.querySection.hidden = true;
       setPreview("請修正來源網址後再試一次。");
     }
   }
@@ -259,9 +461,15 @@
     elements.manualUrlForm = document.getElementById("manual-url-form");
     elements.manualUrlInput = document.getElementById("manual-url-input");
     elements.sourceStatus = document.getElementById("source-status");
+    elements.urlSegments = document.getElementById("url-segments");
+    elements.querySection = document.getElementById("query-section");
+    elements.queryParameters = document.getElementById("query-parameters");
+    elements.actionStatus = document.getElementById("action-status");
     elements.resultUrl = document.getElementById("result-url");
 
     elements.manualUrlForm.addEventListener("submit", handleManualSubmit);
+    elements.urlSegments.addEventListener("click", handleSegmentClick);
+    elements.queryParameters.addEventListener("click", handleQueryClick);
     initFromLocation();
   }
 
@@ -271,6 +479,7 @@
     getSegments,
     normalizeBase64,
     parseQueryItems,
+    rebuildUrl,
     validateHttpUrl,
     REMOVABLE_SEGMENTS
   };
