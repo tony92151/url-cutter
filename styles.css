@@ -120,7 +120,11 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  filter: grayscale(0.2);
+}
+
+button:disabled:not(.segment) {
+  background: #d8dee6;
+  color: #4d5964;
 }
 
 .input-row button,
@@ -162,19 +166,16 @@ button:disabled {
   text-align: left;
 }
 
-button.segment:hover {
-  filter: brightness(0.98);
-}
-
 button.segment:disabled {
   background: #f1e8e7;
   border-color: #d9bfbc;
   color: #7e2b27;
-  filter: grayscale(0.12);
 }
 
 button.segment:disabled:hover {
-  filter: grayscale(0.12);
+  background: #f1e8e7;
+  border-color: #d9bfbc;
+  color: #7e2b27;
 }
 
 .segment-content {
