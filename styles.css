@@ -109,7 +109,7 @@ input {
 
 input:focus-visible,
 button:focus-visible {
-  outline: 3px solid rgb(20 108 148 / 35%);
+  outline: 3px solid #0b5f85;
   outline-offset: 2px;
 }
 
@@ -123,7 +123,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: .55;
+  filter: grayscale(0.2);
 }
 
 .input-row button,
@@ -166,8 +166,12 @@ button.segment:hover {
   filter: brightness(0.98);
 }
 
+button.segment:disabled {
+  opacity: .72;
+}
+
 button.segment:disabled:hover {
-  filter: none;
+  filter: grayscale(0.2);
 }
 
 .segment-content {
