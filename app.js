@@ -5,6 +5,7 @@
   const AUTO_PARSE_DELAY_MS = 180;
 
   const REMOVABLE_SEGMENTS = new Set(["userInfo", "port", "path", "query", "fragment"]);
+  const MAIN_SEGMENT_ORDER = ["userInfo", "port", "path", "query", "fragment"];
 
   const elements = {};
   let state = null;
@@ -125,50 +126,60 @@
     return "保留";
   }
 
-  function getSegmentSortRank(segment) {
-    if (segment.required || segment.status === "必要") {
-      return 0;
+  function removeLaterMainSegments(currentState, segmentId) {
+    const segmentIndex = MAIN_SEGMENT_ORDER.indexOf(segmentId);
+    if (segmentIndex === -1) {
+      return;
     }
 
-    if (segment.status === "移除") {
-      return 2;
+    MAIN_SEGMENT_ORDER.slice(segmentIndex + 1).forEach(function (laterSegmentId) {
+      currentState.removedSegments[laterSegmentId] = true;
+    });
+  }
+
+  function toggleSegmentState(currentState, segmentId) {
+    if (!currentState || !(segmentId in currentState.removedSegments)) {
+      return;
     }
 
-    return 1;
+    if (segmentId === "query") {
+      if (currentState.removedSegments.query || areAllQueryItemsRemoved(currentState)) {
+        currentState.removedSegments.query = false;
+        currentState.queryItems.forEach(function (item) {
+          item.removed = false;
+        });
+      } else {
+        currentState.removedSegments.query = true;
+        removeLaterMainSegments(currentState, segmentId);
+      }
+
+      return;
+    }
+
+    currentState.removedSegments[segmentId] = !currentState.removedSegments[segmentId];
+    if (currentState.removedSegments[segmentId]) {
+      removeLaterMainSegments(currentState, segmentId);
+    }
   }
 
-  function sortSegmentsForDisplay(segments) {
-    return segments
-      .map(function (segment, index) {
-        return { segment, index };
-      })
-      .sort(function (left, right) {
-        const rankDifference = getSegmentSortRank(left.segment) - getSegmentSortRank(right.segment);
-        return rankDifference || left.index - right.index;
-      })
-      .map(function (entry) {
-        return entry.segment;
-      });
+  function toggleQueryItemState(currentState, queryId) {
+    if (!currentState || currentState.removedSegments.query) {
+      return;
+    }
+
+    const item = currentState.queryItems.find(function (queryItem) {
+      return queryItem.id === queryId;
+    });
+
+    if (!item) {
+      return;
+    }
+
+    item.removed = !item.removed;
   }
 
-  function sortQueryItemsForDisplay(queryItems, isWholeQueryRemoved) {
-    return queryItems
-      .map(function (item, index) {
-        return { item, index };
-      })
-      .sort(function (left, right) {
-        const leftRemoved = isWholeQueryRemoved || left.item.removed;
-        const rightRemoved = isWholeQueryRemoved || right.item.removed;
-
-        if (leftRemoved === rightRemoved) {
-          return left.index - right.index;
-        }
-
-        return leftRemoved ? 1 : -1;
-      })
-      .map(function (entry) {
-        return entry.item;
-      });
+  function getQueryItemsForDisplay(currentState) {
+    return currentState.queryItems.slice();
   }
 
   function getSegments(currentState) {
@@ -234,7 +245,7 @@
       });
     }
 
-    return sortSegmentsForDisplay(segments);
+    return segments;
   }
 
   function serializeQueryItem(item) {
@@ -366,7 +377,7 @@
 
     elements.querySection.hidden = false;
 
-    sortQueryItemsForDisplay(state.queryItems, state.removedSegments.query).forEach(function (item) {
+    getQueryItemsForDisplay(state).forEach(function (item) {
       const button = document.createElement("button");
       const removed = state.removedSegments.query || item.removed;
       button.type = "button";
@@ -401,38 +412,12 @@
       return;
     }
 
-    if (segmentId === "query") {
-      if (state.removedSegments.query || areAllQueryItemsRemoved(state)) {
-        state.removedSegments.query = false;
-        state.queryItems.forEach(function (item) {
-          item.removed = false;
-        });
-      } else {
-        state.removedSegments.query = true;
-      }
-
-      render();
-      return;
-    }
-
-    state.removedSegments[segmentId] = !state.removedSegments[segmentId];
+    toggleSegmentState(state, segmentId);
     render();
   }
 
   function toggleQueryItem(queryId) {
-    if (!state || state.removedSegments.query) {
-      return;
-    }
-
-    const item = state.queryItems.find(function (queryItem) {
-      return queryItem.id === queryId;
-    });
-
-    if (!item) {
-      return;
-    }
-
-    item.removed = !item.removed;
+    toggleQueryItemState(state, queryId);
     render();
   }
 
@@ -618,11 +603,14 @@
   window.UrlCutter = {
     createInitialState,
     decodeBase64Url,
+    getQueryItemsForDisplay,
     getSegments,
     getSegmentTitle,
     normalizeBase64,
     parseQueryItems,
     rebuildUrl,
+    toggleQueryItemState,
+    toggleSegmentState,
     validateHttpUrl,
     REMOVABLE_SEGMENTS
   };
