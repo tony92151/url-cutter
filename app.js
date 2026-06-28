@@ -2,11 +2,13 @@
   "use strict";
 
   const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"]);
+  const AUTO_PARSE_DELAY_MS = 180;
 
   const REMOVABLE_SEGMENTS = new Set(["userInfo", "port", "path", "query", "fragment"]);
 
   const elements = {};
   let state = null;
+  let autoParseTimer = null;
 
   function normalizeBase64(input) {
     const trimmed = input.trim().replace(/-/g, "+").replace(/_/g, "/");
@@ -494,8 +496,32 @@
 
   function handleManualSubmit(event) {
     event.preventDefault();
+    parseManualInput(true);
+  }
+
+  function clearParsedUrl() {
+    state = null;
+    showStatus("找不到要裁剪的 URL，請貼上一個 URL。", false);
+    showActionStatus("", false);
+    elements.urlSegments.replaceChildren();
+    elements.queryParameters.replaceChildren();
+    elements.querySection.hidden = true;
+    setPreview("請貼上或透過 ?url= 帶入要裁剪的網址。");
+  }
+
+  function parseManualInput(showSuccess) {
+    const manualUrl = elements.manualUrlInput.value.trim();
+
+    if (!manualUrl) {
+      clearParsedUrl();
+      return;
+    }
+
     try {
-      loadSourceUrl(elements.manualUrlInput.value);
+      loadSourceUrl(manualUrl);
+      if (!showSuccess) {
+        showStatus("網址已自動解析。", false);
+      }
     } catch (error) {
       state = null;
       showStatus(error.message, true);
@@ -505,6 +531,21 @@
       elements.querySection.hidden = true;
       setPreview("請修正來源網址後再試一次。");
     }
+  }
+
+  function scheduleManualParse(delay) {
+    window.clearTimeout(autoParseTimer);
+    autoParseTimer = window.setTimeout(function () {
+      parseManualInput(false);
+    }, delay);
+  }
+
+  function handleManualInput() {
+    scheduleManualParse(AUTO_PARSE_DELAY_MS);
+  }
+
+  function handleManualPaste() {
+    scheduleManualParse(0);
   }
 
   function initFromLocation() {
@@ -537,6 +578,8 @@
     elements.copyButton = document.getElementById("copy-button");
 
     elements.manualUrlForm.addEventListener("submit", handleManualSubmit);
+    elements.manualUrlInput.addEventListener("input", handleManualInput);
+    elements.manualUrlInput.addEventListener("paste", handleManualPaste);
     elements.urlSegments.addEventListener("click", handleSegmentClick);
     elements.queryParameters.addEventListener("click", handleQueryClick);
     elements.generateButton.addEventListener("click", handleGenerateClick);
