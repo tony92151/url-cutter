@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>URL Cutter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">URL Cutter</p>
+        <h1>裁剪網址中不需要的部分</h1>
+      </div>
+    </header>
+
+    <section class="panel input-panel" aria-labelledby="input-title">
+      <h2 id="input-title">來源網址</h2>
+      <form id="manual-url-form" class="url-form" novalidate>
+        <label for="manual-url-input">貼上完整網址</label>
+        <div class="input-row">
+          <input id="manual-url-input" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/path?utm_source=x">
+        </div>
+      </form>
+      <p id="source-status" class="status-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel cutter-panel" aria-labelledby="segments-title">
+      <h2 id="segments-title">URL 分段操作區</h2>
+      <div id="url-segments" class="segment-list" aria-label="URL 組成部分"></div>
+    </section>
+
+    <section id="query-section" class="panel query-panel" aria-labelledby="query-title" hidden>
+      <h2 id="query-title">Query Parameters</h2>
+      <div id="query-parameters" class="segment-list query-list" aria-label="Query parameters"></div>
+    </section>
+
+    <section class="action-panel" aria-label="操作">
+      <button id="generate-button" class="primary-action" type="button">產生裁剪後網址</button>
+      <button id="copy-button" class="secondary-action" type="button">複製裁剪後網址</button>
+      <p id="action-status" class="status-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel preview-panel" aria-labelledby="preview-title">
+      <h2 id="preview-title">裁剪後 URL 預覽</h2>
+      <output id="result-url" class="result-url" for="manual-url-input"></output>
+    </section>
+
+    <section class="panel info-panel" aria-labelledby="info-title">
+      <h2 id="info-title">URL 區段說明</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>URL 部分</th>
+              <th>用意</th>
+              <th>是否建議移除</th>
+              <th>範例</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Protocol + Host</td>
+              <td>指定連線方式與網站網域，是 URL 的核心目的地。</td>
+              <td>不可移除</td>
+              <td><code>https://example.com</code></td>
+            </tr>
+            <tr>
+              <td>User Info</td>
+              <td>URL 中的帳號或密碼資訊。</td>
+              <td>建議移除</td>
+              <td><code>user:pass@</code></td>
+            </tr>
+            <tr>
+              <td>Port</td>
+              <td>指定連線埠。一般網站通常不需要。</td>
+              <td>視情況移除</td>
+              <td><code>:8080</code></td>
+            </tr>
+            <tr>
+              <td>Path</td>
+              <td>指向網站中的特定頁面或資源。</td>
+              <td>視情況移除</td>
+              <td><code>/post/123</code></td>
+            </tr>
+            <tr>
+              <td>Query String</td>
+              <td>傳遞參數，可能包含追蹤碼或必要資料。</td>
+              <td>視情況移除</td>
+              <td><code>?utm_source=x&amp;id=1</code></td>
+            </tr>
+            <tr>
+              <td>Query Parameter</td>
+              <td>Query String 中的單一參數。</td>
+              <td>視情況移除</td>
+              <td><code>utm_source=x</code></td>
+            </tr>
+            <tr>
+              <td>Fragment</td>
+              <td>指向頁面內特定段落。</td>
+              <td>可移除</td>
+              <td><code>#comments</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
