@@ -35,3 +35,9 @@ app.js
 ```
 
 Open `index.html` in a browser to test changes.
+
+Run the regression tests with:
+
+```text
+node tests/url-cutter.test.js
+```

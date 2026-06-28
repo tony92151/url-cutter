@@ -183,8 +183,7 @@ button.segment:disabled:hover {
   gap: 4px;
 }
 
-.segment-label,
-.segment-status {
+.segment-label {
   color: var(--muted);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 12px;

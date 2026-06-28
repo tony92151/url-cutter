@@ -274,11 +274,8 @@
     return nextUrl.toString();
   }
 
-  function createStatusBadge(text) {
-    const badge = document.createElement("span");
-    badge.className = "segment-status";
-    badge.textContent = text;
-    return badge;
+  function getSegmentTitle(segment) {
+    return segment.label + " (" + segment.status + ")";
   }
 
   function createSegmentContent(segment) {
@@ -287,13 +284,13 @@
 
     const label = document.createElement("span");
     label.className = "segment-label";
-    label.textContent = segment.label;
+    label.textContent = getSegmentTitle(segment);
 
     const value = document.createElement("span");
     value.className = "segment-value";
     value.textContent = segment.value;
 
-    content.append(label, value, createStatusBadge(segment.status));
+    content.append(label, value);
     return content;
   }
 
@@ -622,6 +619,7 @@
     createInitialState,
     decodeBase64Url,
     getSegments,
+    getSegmentTitle,
     normalizeBase64,
     parseQueryItems,
     rebuildUrl,

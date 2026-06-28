@@ -73,3 +73,14 @@ test("orders required and kept segments before removed segments", function () {
 
   assert.ok(firstRemovedIndex > lastKeptIndex);
 });
+
+test("formats segment status inside the segment label", function () {
+  assert.equal(
+    UrlCutter.getSegmentTitle({ label: "Protocol + Host", status: "必要" }),
+    "Protocol + Host (必要)"
+  );
+  assert.equal(
+    UrlCutter.getSegmentTitle({ label: "Query String", status: "部分移除" }),
+    "Query String (部分移除)"
+  );
+});
