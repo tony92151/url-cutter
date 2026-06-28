@@ -125,20 +125,59 @@
     return "保留";
   }
 
+  function getSegmentSortRank(segment) {
+    if (segment.required || segment.status === "必要") {
+      return 0;
+    }
+
+    if (segment.status === "移除") {
+      return 2;
+    }
+
+    return 1;
+  }
+
+  function sortSegmentsForDisplay(segments) {
+    return segments
+      .map(function (segment, index) {
+        return { segment, index };
+      })
+      .sort(function (left, right) {
+        const rankDifference = getSegmentSortRank(left.segment) - getSegmentSortRank(right.segment);
+        return rankDifference || left.index - right.index;
+      })
+      .map(function (entry) {
+        return entry.segment;
+      });
+  }
+
+  function sortQueryItemsForDisplay(queryItems, isWholeQueryRemoved) {
+    return queryItems
+      .map(function (item, index) {
+        return { item, index };
+      })
+      .sort(function (left, right) {
+        const leftRemoved = isWholeQueryRemoved || left.item.removed;
+        const rightRemoved = isWholeQueryRemoved || right.item.removed;
+
+        if (leftRemoved === rightRemoved) {
+          return left.index - right.index;
+        }
+
+        return leftRemoved ? 1 : -1;
+      })
+      .map(function (entry) {
+        return entry.item;
+      });
+  }
+
   function getSegments(currentState) {
     const parsed = new URL(currentState.sourceUrl);
     const segments = [
       {
-        id: "protocol",
-        label: "Protocol",
-        value: parsed.protocol,
-        required: true,
-        status: "必要"
-      },
-      {
-        id: "separator",
-        label: "Separator",
-        value: "//",
+        id: "protocolHost",
+        label: "Protocol + Host",
+        value: parsed.protocol + "//" + parsed.hostname,
         required: true,
         status: "必要"
       }
@@ -154,14 +193,6 @@
         status: currentState.removedSegments.userInfo ? "移除" : "保留"
       });
     }
-
-    segments.push({
-      id: "host",
-      label: "Host",
-      value: parsed.hostname,
-      required: true,
-      status: "必要"
-    });
 
     if (parsed.port) {
       segments.push({
@@ -203,7 +234,7 @@
       });
     }
 
-    return segments;
+    return sortSegmentsForDisplay(segments);
   }
 
   function serializeQueryItem(item) {
@@ -338,7 +369,7 @@
 
     elements.querySection.hidden = false;
 
-    state.queryItems.forEach(function (item) {
+    sortQueryItemsForDisplay(state.queryItems, state.removedSegments.query).forEach(function (item) {
       const button = document.createElement("button");
       const removed = state.removedSegments.query || item.removed;
       button.type = "button";
