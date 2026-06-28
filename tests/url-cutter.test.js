@@ -150,3 +150,152 @@ test("formats segment status inside the segment label", function () {
     "Query String (部分移除)"
   );
 });
+
+test("normalizes standard Base64 without changes", function () {
+  assert.equal(UrlCutter.normalizeBase64("aGVsbG8="), "aGVsbG8=");
+});
+
+test("normalizes URL-safe Base64 with - and _", function () {
+  assert.equal(UrlCutter.normalizeBase64("aGVsbG8-"), "aGVsbG8+");
+  assert.equal(UrlCutter.normalizeBase64("aGVsbG8_"), "aGVsbG8/");
+});
+
+test("adds correct padding for Base64", function () {
+  assert.equal(UrlCutter.normalizeBase64("aGVsbG8"), "aGVsbG8=");
+  assert.equal(UrlCutter.normalizeBase64("aGVsbA"), "aGVsbA==");
+});
+
+test("decodes valid Base64 URL", function () {
+  const decoded = UrlCutter.decodeBase64Url("aHR0cHM6Ly9leGFtcGxlLmNvbS8=");
+  assert.equal(decoded, "https://example.com/");
+});
+
+test("throws on invalid Base64", function () {
+  assert.throws(function () {
+    UrlCutter.decodeBase64Url("!!!invalid!!!");
+  });
+});
+
+test("decodes non-HTTP URL without throwing (validation happens later)", function () {
+  const decoded = UrlCutter.decodeBase64Url("ZnRwOi8vZmlsZS50eHQ=");
+  assert.equal(decoded, "ftp://file.txt");
+});
+
+test("accepts valid https URL", function () {
+  const parsed = UrlCutter.validateHttpUrl("https://example.com/path?a=1#top");
+  assert.equal(parsed.protocol, "https:");
+  assert.equal(parsed.hostname, "example.com");
+});
+
+test("accepts valid http URL", function () {
+  const parsed = UrlCutter.validateHttpUrl("http://localhost:8080/path");
+  assert.equal(parsed.protocol, "http:");
+  assert.equal(parsed.port, "8080");
+});
+
+test("rejects invalid URL format", function () {
+  assert.throws(function () {
+    UrlCutter.validateHttpUrl("not-a-url");
+  });
+});
+
+test("rejects unsupported protocol", function () {
+  assert.throws(function () {
+    UrlCutter.validateHttpUrl("ftp://example.com");
+  });
+});
+
+test("parses multiple query parameters", function () {
+  const items = UrlCutter.parseQueryItems("?a=1&b=2&c=3");
+  assert.equal(items.length, 3);
+  assert.equal(items[0].key, "a");
+  assert.equal(items[0].value, "1");
+  assert.equal(items[1].key, "b");
+  assert.equal(items[1].value, "2");
+  assert.equal(items[2].key, "c");
+  assert.equal(items[2].value, "3");
+});
+
+test("decodes URL-encoded parameters via createInitialState", function () {
+  const state = UrlCutter.createInitialState("https://example.com?name=%E5%BC%A0%E4%B8%89");
+  assert.equal(state.queryItems[0].value, "张三");
+});
+
+test("handles empty value parameters", function () {
+  const items = UrlCutter.parseQueryItems("?key=");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].key, "key");
+  assert.equal(items[0].value, "");
+  assert.equal(items[0].hasEquals, true);
+});
+
+test("handles flag parameters without value", function () {
+  const items = UrlCutter.parseQueryItems("?flag&active&debug");
+  assert.equal(items.length, 3);
+  assert.equal(items[0].key, "flag");
+  assert.equal(items[0].value, "");
+  assert.equal(items[0].hasEquals, false);
+});
+
+test("full flow: encode URL to Base64, decode, remove path, rebuild", function () {
+  const originalUrl = "https://example.com:8080/path/to/page?a=1#section";
+  const encoded = btoa(originalUrl);
+  const decoded = UrlCutter.decodeBase64Url(encoded);
+
+  const state = UrlCutter.createInitialState(decoded);
+  UrlCutter.toggleSegmentState(state, "path");
+
+  const result = UrlCutter.rebuildUrl(state);
+  assert.equal(result, "https://example.com:8080/");
+});
+
+test("full flow: remove userInfo and query, rebuild", function () {
+  const originalUrl = "https://user:pass@example.com/path?a=1&b=2#top";
+  const encoded = btoa(originalUrl);
+  const decoded = UrlCutter.decodeBase64Url(encoded);
+
+  const state = UrlCutter.createInitialState(decoded);
+  UrlCutter.toggleSegmentState(state, "userInfo");
+  UrlCutter.toggleSegmentState(state, "query");
+
+  const result = UrlCutter.rebuildUrl(state);
+  assert.equal(result, "https://example.com/?a=1&b=2");
+});
+
+test("full flow: toggle individual query params, rebuild", function () {
+  const originalUrl = "https://example.com?keep=1&remove=2&keep=3";
+  const encoded = btoa(originalUrl);
+  const decoded = UrlCutter.decodeBase64Url(encoded);
+
+  const state = UrlCutter.createInitialState(decoded);
+  UrlCutter.toggleQueryItemState(state, "query-1");
+
+  const result = UrlCutter.rebuildUrl(state);
+  assert.equal(result, "https://example.com/?keep=1&keep=3");
+});
+
+test("full flow: cascade removal from port, rebuild", function () {
+  const originalUrl = "https://example.com:443/path?query=value#fragment";
+  const encoded = btoa(originalUrl);
+  const decoded = UrlCutter.decodeBase64Url(encoded);
+
+  const state = UrlCutter.createInitialState(decoded);
+  UrlCutter.toggleSegmentState(state, "port");
+
+  const result = UrlCutter.rebuildUrl(state);
+  assert.equal(result, "https://example.com/");
+});
+
+test("full flow: URL-safe Base64 roundtrip", function () {
+  const originalUrl = "https://example.com/path?key=value";
+  const urlSafe = originalUrl.replace(/\+/g, "-").replace(/\//g, "_");
+  const encoded = btoa(originalUrl).replace(/\+/g, "-").replace(/\//g, "_");
+
+  const decoded = UrlCutter.decodeBase64Url(encoded);
+  assert.equal(decoded, originalUrl);
+
+  const state = UrlCutter.createInitialState(decoded);
+  const segments = UrlCutter.getSegments(state);
+
+  assert.equal(segments[0].value, "https://example.com");
+});
